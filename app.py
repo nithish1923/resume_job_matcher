@@ -33,7 +33,8 @@ if resume:
 
         if matched_jobs:
             for job in matched_jobs:
-                st.markdown(f"### {job['title']} at {job['company']}")
+                similarity_pct = job.get('similarity', 0) * 100
+                st.markdown(f"### {job['title']} at {job['company']}  (Match: {similarity_pct:.1f}%)")
                 st.markdown(f"📍 {job['location']}")
                 st.write(job['description'][:300] + "...")
                 st.markdown("---")
