@@ -8,7 +8,7 @@ def extract_keywords(text):
     common_skills = {"python", "tensorflow", "pytorch", "llm", "gpt", "ai", "ml", "rag", "streamlit", "gcp", "aws", "azure", "langchain"}
     return list(set(words) & common_skills)
 
-def match_jobs(resume_text, job_list, similarity_threshold=0.03):
+def match_jobs(resume_text, job_list):
     if not job_list:
         return []
 
@@ -23,5 +23,12 @@ def match_jobs(resume_text, job_list, similarity_threshold=0.03):
     vectors = vectorizer.fit_transform(all_texts)
     similarities = cosine_similarity(vectors[0:1], vectors[1:]).flatten()
 
-    top_indices = similarities.argsort()[::-1][:5]
-    return [job_list[i] for i in top_indices if similarities[i] > similarity_threshold]
+    top_indices = similarities.argsort()[::-1][:5]  # top 5 indices by similarity
+
+    # Return top 5 jobs with their similarity scores included
+    matched = []
+    for i in top_indices:
+        job = job_list[i].copy()
+        job['similarity'] = similarities[i]
+        matched.append(job)
+    return matched
