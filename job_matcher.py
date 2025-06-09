@@ -1,33 +1,30 @@
-# match_jobs.py
-from sentence_transformers import SentenceTransformer, util
+import re
 
-# Load model once
-model = SentenceTransformer('all-MiniLM-L6-v2')
+def clean_text(text):
+    # Lowercase and remove non-alphanumeric characters for simple matching
+    return re.sub(r'[^a-z0-9\s]', '', text.lower())
 
 def match_jobs(resume_text, jobs):
     """
-    Matches jobs to resume text using cosine similarity of embeddings.
-    Returns jobs sorted by similarity descending, each with 'similarity' key.
+    Match jobs to resume by simple keyword overlap.
+    Returns jobs sorted by overlap score descending.
+    Each job dict will have 'similarity' (0 to 1).
     """
-    # Encode resume once
-    resume_embedding = model.encode(resume_text, convert_to_tensor=True)
+    resume_words = set(clean_text(resume_text).split())
 
     matched_jobs = []
     for job in jobs:
-        # Combine title + description to represent job text
         job_text = f"{job.get('title', '')} {job.get('description', '')}"
+        job_words = set(clean_text(job_text).split())
 
-        # Encode job text
-        job_embedding = model.encode(job_text, convert_to_tensor=True)
+        # Calculate Jaccard similarity: intersection / union
+        intersection = resume_words.intersection(job_words)
+        union = resume_words.union(job_words)
+        similarity = len(intersection) / len(union) if union else 0
 
-        # Compute cosine similarity (value between 0 and 1)
-        similarity = util.pytorch_cos_sim(resume_embedding, job_embedding).item()
-
-        # Add similarity score to job dict
         job['similarity'] = similarity
         matched_jobs.append(job)
 
-    # Sort jobs by similarity descending (best matches first)
+    # Sort jobs by similarity descending
     matched_jobs.sort(key=lambda x: x['similarity'], reverse=True)
-
     return matched_jobs
