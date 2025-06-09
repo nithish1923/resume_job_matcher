@@ -2,4 +2,4 @@ streamlit
 pdfplumber
 requests
 scikit-learn
-openai
+openai>=1.0.0
