@@ -1,34 +1,33 @@
-import re
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+# match_jobs.py
+from sentence_transformers import SentenceTransformer, util
 
-def extract_keywords(text):
-    text = text.lower()
-    words = re.findall(r'\b[a-z]{4,}\b', text)
-    common_skills = {"python", "tensorflow", "pytorch", "llm", "gpt", "ai", "ml", "rag", "streamlit", "gcp", "aws", "azure", "langchain"}
-    return list(set(words) & common_skills)
+# Load model once
+model = SentenceTransformer('all-MiniLM-L6-v2')
 
-def match_jobs(resume_text, job_list):
-    if not job_list:
-        return []
+def match_jobs(resume_text, jobs):
+    """
+    Matches jobs to resume text using cosine similarity of embeddings.
+    Returns jobs sorted by similarity descending, each with 'similarity' key.
+    """
+    # Encode resume once
+    resume_embedding = model.encode(resume_text, convert_to_tensor=True)
 
-    resume_keywords = extract_keywords(resume_text)
-    if not resume_keywords:
-        return []
+    matched_jobs = []
+    for job in jobs:
+        # Combine title + description to represent job text
+        job_text = f"{job.get('title', '')} {job.get('description', '')}"
 
-    descriptions = [job.get("description", "") for job in job_list]
-    all_texts = [" ".join(resume_keywords)] + descriptions
+        # Encode job text
+        job_embedding = model.encode(job_text, convert_to_tensor=True)
 
-    vectorizer = TfidfVectorizer(stop_words="english")
-    vectors = vectorizer.fit_transform(all_texts)
-    similarities = cosine_similarity(vectors[0:1], vectors[1:]).flatten()
+        # Compute cosine similarity (value between 0 and 1)
+        similarity = util.pytorch_cos_sim(resume_embedding, job_embedding).item()
 
-    top_indices = similarities.argsort()[::-1][:5]  # top 5 indices by similarity
+        # Add similarity score to job dict
+        job['similarity'] = similarity
+        matched_jobs.append(job)
 
-    # Return top 5 jobs with their similarity scores included
-    matched = []
-    for i in top_indices:
-        job = job_list[i].copy()
-        job['similarity'] = similarities[i]
-        matched.append(job)
-    return matched
+    # Sort jobs by similarity descending (best matches first)
+    matched_jobs.sort(key=lambda x: x['similarity'], reverse=True)
+
+    return matched_jobs
