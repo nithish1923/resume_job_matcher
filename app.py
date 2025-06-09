@@ -7,27 +7,40 @@ from keyword_enhancer import suggest_keywords
 st.title("📄 Resume & Job Match Agent")
 
 resume = st.file_uploader("Upload your Resume (PDF)", type=["pdf"])
-job_query = st.text_input("Enter Job Title (e.g., GenAI Developer)")
-location = st.text_input("Enter Location (e.g., Remote)", value="Remote")
 
-if resume and job_query:
+if resume:
     with st.spinner("Parsing Resume..."):
         resume_text = parse_resume(resume)
 
-    with st.spinner("Fetching Job Descriptions..."):
-        jobs = fetch_jobs(job_query, location)
+    st.subheader("Parsed Resume Text")
+    st.write(resume_text[:500] + "...")
 
-    with st.spinner("Matching Jobs..."):
-        top_matches = match_jobs(resume_text, jobs)
+    # Extract broad job query from resume text - For demo, let's take top nouns or just ask user
+    job_query = st.text_input("Enter Job Role / Title to search jobs for (e.g., AI Engineer)")
+    location = st.text_input("Enter Location (e.g., Remote)", value="Remote")
 
-    st.subheader("Top Job Matches")
-    for job in top_matches:
-        st.markdown(f"### {job['title']} at {job['company']}")
-        st.markdown(f"📍 {job['location']}")
-        st.write(job['description'][:300] + "...")
-        st.markdown("---")
+    if job_query:
+        with st.spinner("Fetching job listings matching your resume..."):
+            jobs = fetch_jobs(job_query, location, limit=20)
 
-    with st.spinner("Suggesting Keywords..."):
-        keywords = suggest_keywords(resume_text, top_matches)
-        st.subheader("📌 Keyword Suggestions")
-        st.markdown(keywords)
+        with st.spinner("Matching jobs to your resume..."):
+            matched_jobs = match_jobs(resume_text, jobs)
+
+        st.subheader(f"Top {len(matched_jobs)} Jobs Matching Your Resume")
+
+        if matched_jobs:
+            for job in matched_jobs:
+                st.markdown(f"### {job['title']} at {job['company']}")
+                st.markdown(f"📍 {job['location']}")
+                st.write(job['description'][:300] + "...")
+                st.markdown("---")
+
+            with st.spinner("Generating keyword suggestions..."):
+                keywords = suggest_keywords(resume_text, matched_jobs)
+                st.subheader("📌 Suggested Keywords to Enhance Your Resume")
+                st.markdown(keywords)
+        else:
+            st.info("No closely matching jobs found. Try adjusting the job role or location.")
+
+else:
+    st.info("Please upload your resume to begin.")
