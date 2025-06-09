@@ -1,30 +1,31 @@
 import re
 
 def clean_text(text):
-    # Lowercase and remove non-alphanumeric characters for simple matching
     return re.sub(r'[^a-z0-9\s]', '', text.lower())
 
+def jaccard_similarity(set1, set2):
+    intersection = set1.intersection(set2)
+    union = set1.union(set2)
+    return len(intersection) / len(union) if union else 0
+
 def match_jobs(resume_text, jobs):
-    """
-    Match jobs to resume by simple keyword overlap.
-    Returns jobs sorted by overlap score descending.
-    Each job dict will have 'similarity' (0 to 1).
-    """
     resume_words = set(clean_text(resume_text).split())
 
     matched_jobs = []
     for job in jobs:
-        job_text = f"{job.get('title', '')} {job.get('description', '')}"
-        job_words = set(clean_text(job_text).split())
+        job_title = job.get('title', '')
+        job_desc = job.get('description', '')
 
-        # Calculate Jaccard similarity: intersection / union
-        intersection = resume_words.intersection(job_words)
-        union = resume_words.union(job_words)
-        similarity = len(intersection) / len(union) if union else 0
+        job_title_words = set(clean_text(job_title).split())
+        job_desc_words = set(clean_text(job_desc).split())
+
+        title_score = jaccard_similarity(resume_words, job_title_words)
+        desc_score = jaccard_similarity(resume_words, job_desc_words)
+
+        similarity = 0.7 * title_score + 0.3 * desc_score
 
         job['similarity'] = similarity
         matched_jobs.append(job)
 
-    # Sort jobs by similarity descending
     matched_jobs.sort(key=lambda x: x['similarity'], reverse=True)
     return matched_jobs
