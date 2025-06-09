@@ -1,6 +1,6 @@
 import requests
 
-def fetch_jobs(query, location="Remote", limit=5):
+def fetch_jobs(query, location="Remote", limit=10):
     url = "https://jobs.indianapi.in/jobs"
     params = {
         "title": query,
