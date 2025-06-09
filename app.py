@@ -28,7 +28,7 @@ if resume:
 
         st.subheader(f"Top {len(matched_jobs)} Jobs Matching Your Resume")
 
-        if matched_jobs:
+                if matched_jobs:
             for job in matched_jobs:
                 st.markdown(f"### {job['title']} at {job['company']}")
                 st.markdown(f"📍 {job['location']}")
@@ -40,7 +40,15 @@ if resume:
                 st.subheader("📌 Suggested Keywords to Enhance Your Resume")
                 st.markdown(keywords)
         else:
-            st.info("No closely matching jobs found. Try adjusting the job role or location.")
+            st.warning("No strong matches found for your resume.")
+            if jobs:
+                st.subheader("🔍 Here are some similar job openings instead:")
+                for job in jobs[:5]:
+                    st.markdown(f"### {job['title']} at {job['company']}")
+                    st.markdown(f"📍 {job['location']}")
+                    st.write(job['description'][:300] + "...")
+                    st.markdown("---")
+
 
 else:
     st.info("Please upload your resume to begin.")
